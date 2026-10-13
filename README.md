@@ -6,12 +6,20 @@
 
 ## 安装与最短调用
 
-整个 `Management-SDK` 目录可复制给第三方，无需仓库的其他目录、配置或本地动态库。
+本 SDK 是独立公开仓库，也作为平台的 `management-sdk/` 子模块使用。独立使用时：
+
+```bash
+git clone https://github.com/BintaoYu/management-sdk.git
+cd management-sdk
+python -m pip install .
+```
+
+整个 `management-sdk` 目录可复制给第三方，无需仓库的其他目录、配置或本地动态库。
 
 ```bash
 python -m venv .venv
 . .venv/bin/activate  # Windows：.venv\Scripts\activate
-python -m pip install ./Management-SDK
+python -m pip install ./management-sdk
 # 或安装收到的 wheel
 python -m pip install management_sdk-0.2.0-py3-none-any.whl
 ```
@@ -126,14 +134,14 @@ base_url 指向 Runtime 的 18080 端口。
 
 ```bash
 # 安装后直接运行，不设置 PYTHONPATH
-python Management-SDK/examples/manage.py --types
-python Management-SDK/examples/manage.py
-python Management-SDK/examples/manage.py --write app.Source.IN --value 42
-python Management-SDK/examples/manage.py --trigger app.Source.REQ
+python management-sdk/examples/manage.py --types
+python management-sdk/examples/manage.py
+python management-sdk/examples/manage.py --write app.Source.IN --value 42
+python management-sdk/examples/manage.py --trigger app.Source.REQ
 
-python -m unittest discover -s Management-SDK/tests -v
+python -m unittest discover -s management-sdk/tests -v
 python -m pip install build
-python -m build Management-SDK
+python -m build management-sdk
 ```
 
 离线测试只启动 loopback 模拟 Apps，不访问实际服务。wheel 包含可导入的 management_sdk；

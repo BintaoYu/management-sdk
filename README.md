@@ -121,9 +121,12 @@ outcome_unknown。Runtime 拒绝原因及嵌套 Operation/事件拒绝回执保�
 MG_NO_CURRENT、MG_MULTIPLE_CURRENT、MG_NOT_READY、MG_IDENTITY_UNCONFIRMED 说明当前应用
 不能安全确定；RD721 是连接修订冲突；MG_EVENT_REJECTED 保留 accepted=false 与 Reason。
 客户端网络/格式错误使用 SDK_TIMEOUT、SDK_TRANSPORT、SDK_PROTOCOL。
+HTTP响应中途截断及其他HTTP协议异常统一转换为ManagementError，保留本次request_id及已收到的HTTP状态。
+修改请求无法确认结果时outcome_unknown=true；响应读取失败不触发自动重发。
 
 运行应用、激活或 Runtime/Apps 会话变化时，返回 MG_SESSION_CHANGED、RD017 或 csrf_rejected。
 旧客户端不会自动刷新后重放命令；请新建 ManagementClient、重新查询实例，再明确决定新操作。
+若当前应用校验后、实际执行前发生重新激活，Runtime以RD529拒绝本次旧身份请求，参数和事件不会转交给新activation。
 客户端超时不取消已接纳工作，**不自动重发连接变更、参数写入或事件**。异常的 request_id 可与
 get_status 中有界 commands / 事件接纳记录关联；记录缺失不能推断成功或失败。
 

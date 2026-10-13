@@ -1,153 +1,46 @@
 {
-  "sdk_version": "0.2.0",
-  "verification_date": "2026-10-13",
+  "sdk_version": "0.2.1",
+  "verification_date": "2026-10-14",
   "python": "3.12",
-  "source_base_commit": "0623c919740461aca574539d22414fe1a7c2ac11",
+  "source_base_commit": "d0485ae523767de65bf3c5256d0d9da87858dc92",
   "architecture": "Management-SDK -> Apps HTTP -> Softbus -> Runtime -> container executor",
   "tests": {
-    "sdk_protocol": 16,
-    "apps_backend": 64,
-    "frontend": 193,
-    "frontend_build": "passed"
+    "sdk_protocol": 18,
+    "apps_backend": 65,
+    "runtime_targeted": 4,
+    "management_e2e": "passed",
+    "parallel_namespace_http": "timeout; serial rerun passed",
+    "full_fixture_s0": "timeout"
   },
   "independent_distribution": {
     "source_directory_outside_repository": true,
-    "source_clean_venv": true,
     "wheel_separate_clean_venv": true,
-    "runtime_dependencies": []
+    "runtime_dependencies": [],
+    "platform_imports": false,
+    "native_sdk_loaded": false,
+    "user_installation": "0.2.1"
+  },
+  "failure_behavior": {
+    "http_exception": "ManagementError",
+    "request_id_preserved": true,
+    "received_http_status_preserved": true,
+    "mutating_outcome_unknown": true,
+    "automatic_retry": false
   },
   "runtime_smoke": {
     "software_only": true,
-    "application": "management-sdk-apps-test-20261013",
-    "types_and_interfaces_passed": true,
+    "existing_apps_http_service": true,
     "instances": 2,
+    "parameter_write_readback": true,
     "parameter_write_does_not_trigger": true,
-    "event_admissions": 4,
-    "execution_confirmations": 4,
-    "mutations": [
-      {
-        "action": "delete_Event",
-        "type": "Event",
-        "applied": true,
-        "transport": "softbus",
-        "revision": 2,
-        "agent_receipts": 2
-      },
-      {
-        "action": "create_Event",
-        "type": "Event",
-        "applied": true,
-        "transport": "softbus",
-        "revision": 3,
-        "agent_receipts": 2
-      },
-      {
-        "action": "delete_Data",
-        "type": "Data",
-        "applied": true,
-        "transport": "softbus",
-        "revision": 4,
-        "agent_receipts": 1
-      },
-      {
-        "action": "create_Data",
-        "type": "Data",
-        "applied": true,
-        "transport": "softbus",
-        "revision": 5,
-        "agent_receipts": 1
-      }
-    ],
-    "event_delete_blocks_delivery": true,
-    "data_delete_preserves_input_storage": true,
-    "errors": {
-      "duplicate_connection": "RD722",
-      "nested_operation": "failed",
-      "nested_operation_runtime_http_status": 200,
-      "event_refusal_code": "MG_EVENT_REJECTED",
-      "event_refusal_reason": "INVALID_STATE",
-      "apps_session_change": {
-        "code": "csrf_rejected",
-        "request_id": "sdk-ed78dbc582f945ba9209120a40b773fd",
-        "http_status": 403,
-        "read_code": "MG_SESSION_CHANGED"
-      },
-      "timeout_code": "SDK_TIMEOUT",
-      "timeout_result_correlated_once": true
-    },
-    "restoration": {
-      "parameters": {
-        "app.Source.IN": 0,
-        "app.Source.Value": 0,
-        "app.Source.Count": 0,
-        "app.Sink.X": 0,
-        "app.Sink.Y": 0,
-        "app.Sink.Count": 0
-      },
-      "parameters_match": true,
-      "connections_match": true,
-      "active_state_restored": true,
-      "cleanup": {
-        "halt": "succeeded",
-        "cleanup": "succeeded",
-        "unregister": "succeeded",
-        "resource_topology_unchanged": true,
-        "no_current_application": true
-      }
-    },
-    "additional_attempts": {
-      "bootstrap_read_timeout": 1,
-      "administrator_ipc_permission_rejection": 1,
-      "business_commands_replayed": 0
-    }
+    "event_admission_and_handler_completion": true,
+    "transport": "softbus",
+    "stale_parameter_activation": "RD529",
+    "stale_event_activation": "RD529",
+    "cleanup_complete": true
   },
-  "browser": {
-    "passed": true,
-    "edge_changes": [
-      {
-        "step": "initial",
-        "edges": 2
-      },
-      {
-        "step": "SDK event delete",
-        "edges": 1
-      },
-      {
-        "step": "SDK data delete",
-        "edges": 1
-      },
-      {
-        "step": "browser Event delete",
-        "edges": 1
-      }
-    ],
-    "javascript_errors": [],
-    "simple_requests": [
-      {
-        "url": "http://127.0.0.1:8080/api/v1/management/connections/delete",
-        "body": {
-          "source": "app.Source.CNF",
-          "destination": "app.Sink.REQ"
-        }
-      },
-      {
-        "url": "http://127.0.0.1:8080/api/v1/management/connections/create",
-        "body": {
-          "source": "app.Source.CNF",
-          "destination": "app.Sink.REQ"
-        }
-      },
-      {
-        "url": "http://127.0.0.1:8080/api/v1/management/events/trigger",
-        "body": {
-          "reference": "app.Source.REQ"
-        }
-      }
-    ],
-    "parameters_restored": true
-  },
-  "source_sha256": {
-    "__init__.py": "85db7e89d7ce589b6f94a9b0a3eab8b81af9a57c245125b3353a5f14a3593671",
-    "client.py": "0050718b668e26b2f2e9d5deabb1791b61249e37303a09c059a4ad094f17fb1e"
-  }
+  "limitations": [
+    "No performance or field-device claim",
+    "Unrelated full-fixture S0 timeout is retained"
+  ]
 }

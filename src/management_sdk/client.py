@@ -1,4 +1,5 @@
 """Synchronous Apps HTTP client, with no Runtime protocol or local SDK access."""
+import http.client
 import json
 import math
 import socket
@@ -72,8 +73,9 @@ class ManagementClient:
             except urllib.error.HTTPError as error:
                 response = error
             with response:
-                status, raw = response.code, response.read()
-        except (OSError, urllib.error.URLError) as error:
+                status = response.code
+                raw = response.read()
+        except (OSError, urllib.error.URLError, http.client.HTTPException) as error:
             cause = getattr(error, "reason", error)
             code = "SDK_TIMEOUT" if isinstance(cause, (TimeoutError, socket.timeout)) else "SDK_TRANSPORT"
             raise ManagementError(str(error), code=code, http_status=status, request_id=identity,

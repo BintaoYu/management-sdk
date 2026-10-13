@@ -1,9 +1,11 @@
 """Offline Apps HTTP contract tests; only a loopback fake server is started."""
+import http.client
 import json
 import threading
 import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from unittest.mock import patch
 from management_sdk import ManagementClient, ManagementError
 
 
@@ -13,6 +15,7 @@ class ProtocolTests(unittest.TestCase):
         self.context = "current-one"
         self.csrf = "csrf-one"
         self.reply = lambda p, b: (200, [])
+        self.truncate = False
         owner = self
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *args): pass
@@ -30,7 +33,7 @@ class ProtocolTests(unittest.TestCase):
                     envelope["result" if status < 400 else "error"] = result
                     data = json.dumps(envelope).encode()
                 self.send_response(status); self.send_header("Content-Length", str(len(data))); self.end_headers()
-                try: self.wfile.write(data)
+                try: self.wfile.write(data[:-8] if owner.truncate else data)
                 except (BrokenPipeError, ConnectionResetError): pass
             do_GET = handle_request
             do_POST = handle_request
@@ -121,6 +124,34 @@ class ProtocolTests(unittest.TestCase):
         def reply(p,b):time.sleep(.08);return 200,1
         self.reply=reply
         self.assertFalse(self.error(lambda:self.client.read_parameter("a.IN"),"SDK_TIMEOUT").outcome_unknown)
+    def test_truncated_response_preserves_identity_and_never_replays(self):
+        self.client.list_instances()
+        self.reply=lambda p,b:(200,{"completed":True})
+        self.truncate=True
+        for call,mutating in ((lambda:self.client.create_connection("a.CNF","b.REQ"),True),
+                              (lambda:self.client.delete_connection("a.OUT","b.IN"),True),
+                              (lambda:self.client.write_parameter("a.IN",1),True),
+                              (lambda:self.client.trigger_event("a.REQ"),True),
+                              (lambda:self.client.read_parameter("a.IN"),False)):
+            before=len(self.calls)
+            error=self.error(call,"SDK_TRANSPORT")
+            self.assertIsInstance(error.__cause__,http.client.IncompleteRead)
+            self.assertEqual(error.http_status,200)
+            self.assertEqual(error.request_id,self.calls[-1][2]["X-Request-Id"])
+            self.assertEqual(error.outcome_unknown,mutating)
+            self.assertEqual(len(self.calls),before+1)
+        self.truncate=False
+        self.assertTrue(self.client.write_parameter("a.IN",2)["completed"])
+    def test_http_exception_before_headers_preserves_identity(self):
+        self.client.list_instances()
+        for exception in (http.client.BadStatusLine("broken"),http.client.RemoteDisconnected("closed")):
+            with patch.object(self.client._opener,"open",side_effect=exception) as opened:
+                error=self.error(lambda:self.client.trigger_event("a.REQ"),"SDK_TRANSPORT")
+            self.assertIs(error.__cause__,exception)
+            self.assertEqual(error.request_id,opened.call_args.args[0].get_header("X-request-id"))
+            self.assertIsNone(error.http_status)
+            self.assertTrue(error.outcome_unknown)
+            opened.assert_called_once()
     def test_foreign_runtime_envelope_and_bad_json_rejected(self):
         self.reply=lambda p,b:(200,b'{"api":"runtime-api/1","ok":true,"result":{}}')
         self.error(self.client.list_instances,"SDK_PROTOCOL")

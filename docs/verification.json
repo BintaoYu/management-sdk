@@ -1,0 +1,96 @@
+{
+  "sdk_version": "0.1.0",
+  "verification_date": "2026-10-13",
+  "python": "3.12",
+  "source_base_commit": "392d02383fdcda47f0cfec8a61fa965d8a1a1632",
+  "offline_protocol_tests": 17,
+  "independent_source_install": {
+    "outside_repository": true,
+    "clean_venv": true,
+    "tests_passed": 17,
+    "runtime_dependencies": []
+  },
+  "independent_wheel_install": {
+    "outside_repository": true,
+    "clean_venv": true,
+    "tests_passed": 17,
+    "runtime_dependencies": []
+  },
+  "runtime_smoke": {
+    "test_mode": false,
+    "runtime_binary_sha256": "abc88b18714a9b9b78c689d92a153b647305e849af670cd37f0fafbbd4606bf7",
+    "runtime_session_id": "68268cbb-21c8-4234-9efd-653aa188b431",
+    "application_id": "management-sdk-software-test-20261013",
+    "application_digest": "47e4b455be3a6eebe9e9336dfb5024e2a45c4d4d5d180379fcb0143eda87c538",
+    "container_deployment_id": "management-sdk-software-test-20261013-cd1",
+    "connection_deployment_id": "management-sdk-software-test-20261013-conn",
+    "software_only": true,
+    "queries_passed": true,
+    "parameter_read_write_passed": true,
+    "write_does_not_trigger_event": {
+      "source_count": 0,
+      "sink_count": 0
+    },
+    "event_admissions": 5,
+    "event_execution_confirmations": 5,
+    "optional_bytes_payload_verified": true,
+    "revision_conflict_code": "RD721",
+    "connection_mutations": [
+      {
+        "action": "delete_Event",
+        "revision": 2,
+        "applied": true,
+        "agent_receipt_count": 2
+      },
+      {
+        "action": "create_Event",
+        "revision": 3,
+        "applied": true,
+        "agent_receipt_count": 2
+      },
+      {
+        "action": "delete_Data",
+        "revision": 4,
+        "applied": true,
+        "agent_receipt_count": 1
+      },
+      {
+        "action": "create_Data",
+        "revision": 5,
+        "applied": true,
+        "agent_receipt_count": 1
+      }
+    ],
+    "event_delete_blocks_delivery": true,
+    "data_delete_preserves_input_storage": true,
+    "original_request_result_queries_passed": 2,
+    "restoration": {
+      "initial_revision": 1,
+      "final_revision": 5,
+      "topology_matches": true,
+      "parameters": {
+        "app.Source.IN": 0,
+        "app.Source.Value": 0,
+        "app.Source.Count": 0,
+        "app.Sink.X": 0,
+        "app.Sink.Y": 0,
+        "app.Sink.Count": 0
+      },
+      "parameters_match": true,
+      "application_state": "active",
+      "runtime_cleanup": {
+        "halt": "succeeded",
+        "cleanup": "succeeded",
+        "unregister": "succeeded",
+        "no_applications": true,
+        "no_connection_deployments": true,
+        "no_live_test_containers": true,
+        "resource_topology_unchanged": true
+      }
+    }
+  },
+  "source_sha256": {
+    "src/management_sdk/__init__.py": "ec69edc8087d18a0540fb97e9afee1c63fe4e6c5a1d4e4efc29759a498bc4882",
+    "src/management_sdk/client.py": "0038ae26993569e6e5a8312339da64093a4c7afc58f66463da41c76e9a34f513"
+  }
+}

@@ -1,5 +1,5 @@
-"""Dependency-free HTTP management of already deployed Runtime applications."""
+"""Dependency-free HTTP management of the current application through Apps HTTP."""
 from .client import ManagementClient, ManagementError
 
 __all__ = ["ManagementClient", "ManagementError"]
-__version__ = "0.1.0"
+__version__ = "0.2.0"

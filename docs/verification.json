@@ -1,73 +1,81 @@
 {
-  "sdk_version": "0.1.0",
+  "sdk_version": "0.2.0",
   "verification_date": "2026-10-13",
   "python": "3.12",
-  "source_base_commit": "392d02383fdcda47f0cfec8a61fa965d8a1a1632",
-  "offline_protocol_tests": 17,
-  "independent_source_install": {
-    "outside_repository": true,
-    "clean_venv": true,
-    "tests_passed": 17,
-    "runtime_dependencies": []
+  "source_base_commit": "0623c919740461aca574539d22414fe1a7c2ac11",
+  "architecture": "Management-SDK -> Apps HTTP -> Softbus -> Runtime -> container executor",
+  "tests": {
+    "sdk_protocol": 16,
+    "apps_backend": 64,
+    "frontend": 193,
+    "frontend_build": "passed"
   },
-  "independent_wheel_install": {
-    "outside_repository": true,
-    "clean_venv": true,
-    "tests_passed": 17,
+  "independent_distribution": {
+    "source_directory_outside_repository": true,
+    "source_clean_venv": true,
+    "wheel_separate_clean_venv": true,
     "runtime_dependencies": []
   },
   "runtime_smoke": {
-    "test_mode": false,
-    "runtime_binary_sha256": "abc88b18714a9b9b78c689d92a153b647305e849af670cd37f0fafbbd4606bf7",
-    "runtime_session_id": "68268cbb-21c8-4234-9efd-653aa188b431",
-    "application_id": "management-sdk-software-test-20261013",
-    "application_digest": "47e4b455be3a6eebe9e9336dfb5024e2a45c4d4d5d180379fcb0143eda87c538",
-    "container_deployment_id": "management-sdk-software-test-20261013-cd1",
-    "connection_deployment_id": "management-sdk-software-test-20261013-conn",
     "software_only": true,
-    "queries_passed": true,
-    "parameter_read_write_passed": true,
-    "write_does_not_trigger_event": {
-      "source_count": 0,
-      "sink_count": 0
-    },
-    "event_admissions": 5,
-    "event_execution_confirmations": 5,
-    "optional_bytes_payload_verified": true,
-    "revision_conflict_code": "RD721",
-    "connection_mutations": [
+    "application": "management-sdk-apps-test-20261013",
+    "types_and_interfaces_passed": true,
+    "instances": 2,
+    "parameter_write_does_not_trigger": true,
+    "event_admissions": 4,
+    "execution_confirmations": 4,
+    "mutations": [
       {
         "action": "delete_Event",
-        "revision": 2,
+        "type": "Event",
         "applied": true,
-        "agent_receipt_count": 2
+        "transport": "softbus",
+        "revision": 2,
+        "agent_receipts": 2
       },
       {
         "action": "create_Event",
-        "revision": 3,
+        "type": "Event",
         "applied": true,
-        "agent_receipt_count": 2
+        "transport": "softbus",
+        "revision": 3,
+        "agent_receipts": 2
       },
       {
         "action": "delete_Data",
-        "revision": 4,
+        "type": "Data",
         "applied": true,
-        "agent_receipt_count": 1
+        "transport": "softbus",
+        "revision": 4,
+        "agent_receipts": 1
       },
       {
         "action": "create_Data",
-        "revision": 5,
+        "type": "Data",
         "applied": true,
-        "agent_receipt_count": 1
+        "transport": "softbus",
+        "revision": 5,
+        "agent_receipts": 1
       }
     ],
     "event_delete_blocks_delivery": true,
     "data_delete_preserves_input_storage": true,
-    "original_request_result_queries_passed": 2,
+    "errors": {
+      "duplicate_connection": "RD722",
+      "nested_operation": "failed",
+      "nested_operation_runtime_http_status": 200,
+      "event_refusal_code": "MG_EVENT_REJECTED",
+      "event_refusal_reason": "INVALID_STATE",
+      "apps_session_change": {
+        "code": "csrf_rejected",
+        "request_id": "sdk-ed78dbc582f945ba9209120a40b773fd",
+        "http_status": 403,
+        "read_code": "MG_SESSION_CHANGED"
+      },
+      "timeout_code": "SDK_TIMEOUT",
+      "timeout_result_correlated_once": true
+    },
     "restoration": {
-      "initial_revision": 1,
-      "final_revision": 5,
-      "topology_matches": true,
       "parameters": {
         "app.Source.IN": 0,
         "app.Source.Value": 0,
@@ -77,20 +85,69 @@
         "app.Sink.Count": 0
       },
       "parameters_match": true,
-      "application_state": "active",
-      "runtime_cleanup": {
+      "connections_match": true,
+      "active_state_restored": true,
+      "cleanup": {
         "halt": "succeeded",
         "cleanup": "succeeded",
         "unregister": "succeeded",
-        "no_applications": true,
-        "no_connection_deployments": true,
-        "no_live_test_containers": true,
-        "resource_topology_unchanged": true
+        "resource_topology_unchanged": true,
+        "no_current_application": true
       }
+    },
+    "additional_attempts": {
+      "bootstrap_read_timeout": 1,
+      "administrator_ipc_permission_rejection": 1,
+      "business_commands_replayed": 0
     }
   },
+  "browser": {
+    "passed": true,
+    "edge_changes": [
+      {
+        "step": "initial",
+        "edges": 2
+      },
+      {
+        "step": "SDK event delete",
+        "edges": 1
+      },
+      {
+        "step": "SDK data delete",
+        "edges": 1
+      },
+      {
+        "step": "browser Event delete",
+        "edges": 1
+      }
+    ],
+    "javascript_errors": [],
+    "simple_requests": [
+      {
+        "url": "http://127.0.0.1:8080/api/v1/management/connections/delete",
+        "body": {
+          "source": "app.Source.CNF",
+          "destination": "app.Sink.REQ"
+        }
+      },
+      {
+        "url": "http://127.0.0.1:8080/api/v1/management/connections/create",
+        "body": {
+          "source": "app.Source.CNF",
+          "destination": "app.Sink.REQ"
+        }
+      },
+      {
+        "url": "http://127.0.0.1:8080/api/v1/management/events/trigger",
+        "body": {
+          "reference": "app.Source.REQ"
+        }
+      }
+    ],
+    "parameters_restored": true
+  },
   "source_sha256": {
-    "src/management_sdk/__init__.py": "ec69edc8087d18a0540fb97e9afee1c63fe4e6c5a1d4e4efc29759a498bc4882",
-    "src/management_sdk/client.py": "0038ae26993569e6e5a8312339da64093a4c7afc58f66463da41c76e9a34f513"
+    "__init__.py": "85db7e89d7ce589b6f94a9b0a3eab8b81af9a57c245125b3353a5f14a3593671",
+    "client.py": "0050718b668e26b2f2e9d5deabb1791b61249e37303a09c059a4ad094f17fb1e"
   }
 }

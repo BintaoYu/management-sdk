@@ -1,180 +1,140 @@
 # Management SDK
 
-独立、同步的 Python HTTP 客户端，用于管理**已经运行的 Runtime 中已部署的应用**。
-Python 3.9+，运行时仅用标准库，不需要本地 Softbus 库、工程文件或其他仓库目录。
-服务端需支持 `runtime-api/1` 与 `iec61499-management-json/1`。
+轻量、同步的 Python 客户端，通过 **Apps HTTP → Softbus → Runtime → 容器执行器**
+管理当前运行应用。Apps 自动解析唯一运行应用；第三方只需功能块类型名、实例及端口引用，
+不需要填写应用、部署、修订或请求 ID。Python 3.9+，运行时仅依赖标准库。
 
-## 安装与连接
+## 安装与最短调用
 
-整个 `Management-SDK` 目录可以复制给第三方。使用普通安装，无需设置 `PYTHONPATH`：
+整个 `Management-SDK` 目录可复制给第三方，无需仓库的其他目录、配置或本地动态库。
 
 ```bash
 python -m venv .venv
-# Linux/macOS；Windows 使用 .venv\Scripts\activate
-. .venv/bin/activate
+. .venv/bin/activate  # Windows：.venv\Scripts\activate
 python -m pip install ./Management-SDK
-# 或直接安装收到的 wheel
-python -m pip install management_sdk-0.1.0-py3-none-any.whl
+# 或安装收到的 wheel
+python -m pip install management_sdk-0.2.0-py3-none-any.whl
 ```
-
-SDK 不负责启动 Runtime、编译功能块或部署工程。请由平台管理员先准备软件应用，
-告知服务地址和访问 token（若启用了鉴权）。Runtime 默认监听 `http://127.0.0.1:18080`，
-默认 HTTP 是明文；远程访问应使用管理员提供的受保护入口。
 
 ```python
 from management_sdk import ManagementClient
 
-client = ManagementClient()  # 默认 timeout=10 秒
-# client = ManagementClient("https://runtime.example", token="...", timeout=5)
-print(client.list_applications())
-print(client.list_connection_deployments())
+client = ManagementClient()  # Apps 默认 http://127.0.0.1:8080，timeout=10 秒
+print(client.list_instances())
+print(client.get_connections())
 ```
 
-结果是服务端 `result` 字典，不附加复杂对象模型。第一次请求自动获取 capabilities
-并固定 `runtime_session_id`；后续请求携带 `X-Runtime-Session`。客户端供顺序调用。
-SDK 禁用环境 HTTP 代理且不跟随重定向，`base_url` 应直接指向服务入口。
+实际地址及超时可指定：`ManagementClient("http://apps.example:8080", timeout=5)`。
+由平台管理员先启动 Apps/Runtime 并部署、运行应用；SDK 不负责工程构建或部署。
+Apps 当前约定同一时间只有一个应用运行，没有运行应用返回 MG_NO_CURRENT；
+多个候选返回 MG_MULTIPLE_CURRENT，不挑选任意工程。前端正在编辑的工程不决定操作目标。
 
-## 明确选择应用、实例与端口
+SDK 内部获取 Apps 的 CSRF token 和不透明的运行上下文；变更使用现有 Host/Origin/CSRF
+访问控制。Apps 仍使用现有 RuntimeClient 的 Softbus 传输执行管理命令。
+默认 HTTP 是明文，远程使用管理员提供的受保护入口。客户端不使用环境 HTTP 代理，
+不跟随重定向，实例供顺序调用。
 
-从上面的查询结果中明确选择 `application_id` 和属于它的 `connection_deployment_id`。
-每个操作都要求身份参数，SDK 不会从多个对象中静默挑选一个。
-以下 `app_id`、`conn_id`、端口和变量引用应替换为查询到的实际值。
+## 类型库与已部署实例
 
 ```python
-app_id = "demo"            # 使用查询结果中的 application_id
-conn_id = "demo-conn1"     # 使用查询结果中的 connection_deployment_id
-application = client.get_application(app_id)
-print(application)        # function_blocks/ports：事件方向；metadata.data_fields：WITH 字段；inputs：声明输入
-print(client.query_function_blocks(app_id))  # FBList：实例、类型、Resource、host_state
-print(client.query_parameters(app_id, container="control"))  # Parameters：Reference/Type/Direction
-print(client.query_connections(app_id, conn_id))              # 当前连接与 revision
-print(client.get_connection_deployment(conn_id))              # 含 Event/Data network_binding
-print(client.get_status(app_id))
-print(client.get_execution_state(app_id))                     # 实际拓扑、修订、Agent 执行观察
+print(client.list_block_types())
+# name 使用查询返回的完整名字；不同内容的同名类型带 @ 摘要后缀，避免混淆
+print(client.get_block_type("sdk::SOURCE"))
+print(client.list_instances())
 ```
 
-`QUERY FB` 的 host_state 来自容器观察，不代表独立的功能块生命周期。
-参数通配查询必须指定 owning container；具体参数引用可由服务端解析所属容器。
-完整端口引用可能带应用网络前缀，例如 `app.Source.REQ`，必须按查询结果使用。
-`query_connections` 的 `Connections` 是 Source/Destination 列表，类型及 Data 信息可查
-连接部署的 `network_binding`。`get_execution_state` 的 topology 可能为 null（尚未激活、
-观察缺失或过期等），不能把旧配置视为正在运行的连接。
+类型库是 Apps 各项目既有库的合并视图，不表示类型已部署，也不创建功能块。
+`get_block_type(name)` 返回 `interface`（event_inputs/outputs、data_inputs/outputs），
+包括方向、数据类型、数组大小、初值及事件的 with_variables；`parameters` 包含数据变量
+和内部参数定义。类型库在无运行应用时仍可查询。
 
-## 增删 Event / Data 连接
+`list_instances()` 只查询当前 Runtime 中编译、部署的实例，返回 name、type、container、state、
+event_ports 与 data_ports。实际引用以 name/端口查询结果为准，如 `app.Source.IN`。
+库定义描述可用参数；旧程序若未编译对应读写回调，实际参数访问会返回明确的 Runtime 错误，
+须由管理员用匹配原生 SDK 重建。
 
-连接增删只作用于**已有编译实例和端口**，不会创建功能块。调用者指定连接部署，
-并选用 `connection_type="Event"`（默认）或 `"Data"`：
+## 查询和修改连接
 
 ```python
-topology = client.query_connections(app_id, conn_id)
-removed = client.delete_connection(
-    app_id, conn_id, "app.Source.CNF", "app.Sink.REQ",
-    expected_revision=topology["revision"],
-)
-created = client.create_connection(
-    app_id, conn_id, "app.Source.CNF", "app.Sink.REQ",
-    expected_revision=removed["revision"],
-)
-print(created["revision"], created["saved"])
+print(client.get_connections())  # [{source, destination, type: "Event"|"Data"}, ...]
+print(client.get_status())       # state、agents、实际 topology、commands 和诊断
 
-# 另一个 Data 连接示例：先根据实际拓扑确认该连接存在
-# removed = client.delete_connection(app_id, conn_id, "app.Source.Value", "app.Sink.X",
-#                                    connection_type="Data")
-# created = client.create_connection(app_id, conn_id, "app.Source.Value", "app.Sink.X",
-#                                    connection_type="Data", expected_revision=removed["revision"])
+# 用已有实例的实际端口替换下面的引用
+removed = client.delete_connection("app.Source.CNF", "app.Sink.REQ")
+created = client.create_connection("app.Source.CNF", "app.Sink.REQ")
+print(created["completed"], created["applied"])
+
+# Data 端口使用相同方法，Apps 自动识别
+# client.delete_connection("app.Source.Value", "app.Sink.X")
+# client.create_connection("app.Source.Value", "app.Sink.X")
 ```
 
-不传 `expected_revision` 时，每次变更前通过 QUERY 读取**指定应用和连接部署**的已确认修订，
-不缓存猜测值。读与写之间仍可能发生竞争；`RD721` 会直接抛出，不刷新修订后自动重试。
-传入显式修订可保护调用者此前观察的拓扑。连接操作同步完成，返回实际 `saved.applied`、
-`saved.receipts` 及新 `revision`；未激活的配置修改可能 `applied=false`，不能解释为已作用于 Agent。
-拓扑恢复通过新的增删操作实现，修订会继续增长，不能回退旧修订号。
-跨容器连线是此平台的扩展；编译 ABI、单驱动、不可变版本占用和容量限制由 Runtime 校验。
+连接增删仅操作已有编译实例和端口。Apps 从端口定义推断 Event/Data，内部读取指定当前
+连接部署的修订，Runtime 保留 CAS、所有权、ABI、单驱动和容量检查。读与写间的修订冲突
+直接反馈 RD721，不刷新后自动重试覆盖。
 
-## 参数赋值与事件触发
+连接操作同步完成，返回 completed、applied 和可关联 request_id；复杂实际应用回执、新修订
+和传输信息保存在 diagnostics。连接配置不是执行证明；`get_status().topology` 缺失/null 表示
+执行拓扑尚未确认，不能用旧拓扑冒充正在运行的连接。恢复拓扑用新的操作，修订正常递增。
+
+## 参数读写与事件触发
 
 ```python
-before = client.read_parameter(app_id, "app.Source.IN")
-print(before["Parameter"]["Value"])
-written = client.write_parameter(app_id, "app.Source.IN", 42)
-print(written["operation"]["state"], written["operation"]["result"])
-receipt = client.trigger_event(app_id, "app.Source.REQ")
-print(receipt["accepted"], receipt.get("admission"))
+before = client.read_parameter("app.Source.IN")  # 直接得到值
+client.write_parameter("app.Source.IN", 42)
+receipt = client.trigger_event("app.Source.REQ")
+print(receipt["accepted"], receipt["request_id"])
 ```
 
-**参数赋值不会触发事件。** WRITE Parameter 接受 JSON 布尔、整数、有限实数及固定长度数组，
-不做字符串/数字或布尔/整数转换。需要调用单独的 `trigger_event` 才触发已声明输入。
-即使 HTTP 200、`ok=true`，SDK 仍检查嵌套 Operation 的 state，失败、partial 或未完成均抛错；
-成功返回完整字典，保留 operation_id 和实际结果。旧生成程序可能返回 `RD724`，需管理员
-用匹配的原生 SDK 重建程序。
+**参数赋值不会触发事件。** 读写直接使用 JSON 布尔、整数、有限实数及固定长度数组，不做
+字符串/数字或布尔/整数转换。WRITE 必须实际 Operation 成功才返回 completed=true；
+HTTP 200 中嵌套的 failed/partial/running 不会被包装成成功。
 
-`trigger_event` 返回的是**接纳回执**，`accepted=true` 不表示执行完成。
-拒绝会抛出 `ManagementError`，保留 `accepted=false`、Reason、refusal_reason 等详情。
-使用 `get_execution_state(app_id)` 查看 Agent 的 `event_admissions` / `event_executions`，
-按回执 ID → admission.sequence，并核对同一 Agent/activation 的执行记录。
-执行状态与接纳状态分别保留；单个输入 handler 完成也不证明整条下游链完成。
-两类历史各最多 64 条，记录过期或缺失表示结果未知，不能推断成功。
+`trigger_event(reference)` 只触发已声明输入事件，返回**接纳结果**；accepted=true 不代表执行
+完成。普通接口不暴露 Base64 或原始 ABI 载荷。需要确认 handler 完成时，查询 get_status 的
+agents，通过 diagnostics 中的 admission.sequence 对应同一 activation/Agent 的 event_executions。
+单个输入 handler 的执行结果不证明整个下游链完成；有界历史缺失时结果仍未知。
 
-可选 `payload: bytes` 会自动 Base64 编码为 `Connection.payload_base64`。
-这是**平台事件载荷扩展**，必须匹配编译端口 ABI；它不是 IEC 61499 Parameter WRITE。
-不传 payload 时使用平台对该输入的默认/WITH 快照行为：
-
-```python
-# 仅在管理员已确认端口 ABI 时使用显式字节载荷
-# receipt = client.trigger_event(app_id, "app.Source.REQ", payload=b"\x2a\x00\x00\x00")
-```
-
-## 错误、超时与会话变化
+## 错误、会话变化与超时
 
 ```python
 from management_sdk import ManagementError
 
-request_id = client.new_request_id()  # 在变更前保存 ID，便于超时后核对
 try:
-    result = client.create_connection(
-        app_id, conn_id, "app.Source.CNF", "app.Other.REQ", request_id=request_id,
-    )
+    client.trigger_event("app.Source.REQ")
 except ManagementError as error:
-    print(error.http_status, error.code, error.request_id, error.details)
+    print(error.code, error.http_status, error.request_id, error.details)
     if error.outcome_unknown:
-        # 不重发连接命令，只在原会话内查询原请求
-        outcome = client.get_request_result(request_id)
-        print(outcome)  # complete/result/error；complete=false 表示仍未完成
+        print("结果未知；核对当前状态及命令记录，不自动重发")
 ```
 
-统一异常字段为 `http_status`、`code`、`request_id`、`details`、`response`（完整响应）
-和 `outcome_unknown`。服务器有错误码时原样保留；客户端错误使用 `SDK_TIMEOUT`、
-`SDK_TRANSPORT`、`SDK_PROTOCOL`、`SDK_EVENT_REJECTED` 等。事件拒绝没有服务端错误码时，
-使用 SDK_EVENT_REJECTED，服务端 Reason 等仍保存在 details 中。失败的 Operation 也保留完整记录。
-参数类型、地址等客户端入参错误使用 Python 的 ValueError/TypeError。
+ManagementError 保留 http_status、服务端 code、request_id、details、完整 response 以及
+outcome_unknown。Runtime 拒绝原因及嵌套 Operation/事件拒绝回执保留在 details 中。
+MG_NO_CURRENT、MG_MULTIPLE_CURRENT、MG_NOT_READY、MG_IDENTITY_UNCONFIRMED 说明当前应用
+不能安全确定；RD721 是连接修订冲突；MG_EVENT_REJECTED 保留 accepted=false 与 Reason。
+客户端网络/格式错误使用 SDK_TIMEOUT、SDK_TRANSPORT、SDK_PROTOCOL。
 
-网络失败或超时不取消服务端已接纳工作，**不自动重发任何变更或事件**。
-自动生成的 ID 也可从异常 `request_id` 取回。连接请求可以通过 `get_request_result` 查询；
-完成记录有界（最多 256 个完成结果及 128 个在途请求），过期返回 RD010。
-查询结果中的 `error` 由调用者检查，查询本身不重新执行命令。
-参数 WRITE 可用已知 `operation_id` 调用 `get_operation`，或查看 execution-state 的 commands；
-事件通过上述接纳/执行观察核对，不能用连接请求表承诺事件结果。
-请求 ID 不保证事件恰好一次；切勿因未观察到完成而自动再次触发。
+运行应用、激活或 Runtime/Apps 会话变化时，返回 MG_SESSION_CHANGED、RD017 或 csrf_rejected。
+旧客户端不会自动刷新后重放命令；请新建 ManagementClient、重新查询实例，再明确决定新操作。
+客户端超时不取消已接纳工作，**不自动重发连接变更、参数写入或事件**。异常的 request_id 可与
+get_status 中有界 commands / 事件接纳记录关联；记录缺失不能推断成功或失败。
 
-收到 RD017 表示 Runtime 会话结束或变化。旧客户端保持原身份并抛错，不自动获取新身份
-或重放旧命令。创建新的 ManagementClient、重新查询部署身份后，由调用者决定新操作。
+0.2 的 ManagementClient 仅接受 Apps 协议；0.1 的 Runtime 直连接口已移除。不要把
+base_url 指向 Runtime 的 18080 端口。
 
 ## 示例、测试与打包
 
 ```bash
-# 安装后运行；默认只查询，不修改任何应用
+# 安装后直接运行，不设置 PYTHONPATH
+python Management-SDK/examples/manage.py --types
 python Management-SDK/examples/manage.py
-python Management-SDK/examples/manage.py --application YOUR_APP --container YOUR_CONTAINER
-# 显式赋值或注入，端口与变量来自查询
-python Management-SDK/examples/manage.py --application YOUR_APP --write YOUR_FB.IN --value 42
-python Management-SDK/examples/manage.py --application YOUR_APP --trigger YOUR_FB.REQ
+python Management-SDK/examples/manage.py --write app.Source.IN --value 42
+python Management-SDK/examples/manage.py --trigger app.Source.REQ
 
-# 离线测试：仅启动 loopback 模拟 HTTP 服务器
 python -m unittest discover -s Management-SDK/tests -v
-# 在独立目录内构建 wheel 和源码包
 python -m pip install build
 python -m build Management-SDK
 ```
 
-目录自身包含源码、示例与测试；wheel 包含可直接导入的 management_sdk，源码包同时携带示例和测试。
-实际安装和实机验证结果见 [验证说明](docs/verification.md)。
+离线测试只启动 loopback 模拟 Apps，不访问实际服务。wheel 包含可导入的 management_sdk；
+源码包同时携带 README、示例和测试。独立安装与纯软件实机验证见[验证说明](docs/verification.md)。

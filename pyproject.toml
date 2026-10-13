@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "management-sdk"
-version = "0.1.0"
-description = "Standalone HTTP management client for an existing Industrial Runtime"
+version = "0.2.0"
+description = "Standalone HTTP management client for the current application in Industrial Apps"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = []

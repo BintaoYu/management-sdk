@@ -36,13 +36,16 @@ class ManagementClient:
     change and explicitly decide new commands; old commands are never replayed.
     Instances are synchronous and intended for sequential calls.
     """
-    def __init__(self, base_url: str = "http://127.0.0.1:8080", *, timeout: float = 10.0):
+    def __init__(self, base_url: str = "http://127.0.0.1:8080", *, timeout: float = 10.0, token: Optional[str] = None):
         parsed = urllib.parse.urlsplit(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ("", "/"):
             raise ValueError("base_url must be an http(s) Apps origin without credentials or a path")
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("timeout must be a finite positive number of seconds")
         self.base_url, self.timeout = base_url.rstrip("/"), timeout
+        if token is not None and (not isinstance(token, str) or not token or len(token) > 128 or any(ord(character) < 33 or ord(character) > 126 for character in token)):
+            raise ValueError("token must be one non-empty ASCII API token")
+        self._token = token
         self._csrf = None
         self._context = None
         self._last_request_id = None
@@ -60,6 +63,8 @@ class ManagementClient:
         identity = "sdk-" + uuid.uuid4().hex
         self._last_request_id = identity
         headers = {"Accept": "application/json", "X-Request-ID": identity}
+        if self._token is not None:
+            headers["Authorization"] = "Bearer " + self._token
         if self._context is not None:
             headers["X-Management-Context"] = self._context
         if data is not None:

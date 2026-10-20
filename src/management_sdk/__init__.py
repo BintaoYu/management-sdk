@@ -2,4 +2,4 @@
 from .client import ManagementClient, ManagementError
 
 __all__ = ["ManagementClient", "ManagementError"]
-__version__ = "0.2.0"
+__version__ = "0.2.2"

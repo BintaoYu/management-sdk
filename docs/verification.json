@@ -1,46 +1,75 @@
 {
-  "sdk_version": "0.2.1",
-  "verification_date": "2026-10-14",
+  "sdk_version": "0.2.2",
+  "verification_date": "2026-10-20",
   "python": "3.12",
-  "source_base_commit": "d0485ae523767de65bf3c5256d0d9da87858dc92",
-  "architecture": "Management-SDK -> Apps HTTP -> Softbus -> Runtime -> container executor",
+  "source_sha256": {
+    "pyproject.toml": "0a0cbcda2ba113b3594dbee8303b20ce0c9031efc4beebd17af1c6deb4ee47fa",
+    "src/management_sdk/__init__.py": "684602665b58b7886fa922cfd255dff2601e539f11aa21dab84cf16d08e7eef9",
+    "src/management_sdk/client.py": "0082858b4484b2af6ae933fb378f24f9d3537c863fbea0eb8b9e9791fc5221ca"
+  },
   "tests": {
-    "sdk_protocol": 18,
-    "apps_backend": 65,
-    "runtime_targeted": 4,
-    "management_e2e": "passed",
-    "parallel_namespace_http": "timeout; serial rerun passed",
-    "full_fixture_s0": "timeout"
+    "sdk_protocol": 19,
+    "result": "passed"
   },
   "independent_distribution": {
-    "source_directory_outside_repository": true,
-    "wheel_separate_clean_venv": true,
+    "wheel_built": true,
+    "separate_clean_venv": true,
+    "import_from_installed_venv": true,
     "runtime_dependencies": [],
     "platform_imports": false,
     "native_sdk_loaded": false,
-    "user_installation": "0.2.1"
+    "wheel_sha256": "6d0b31db3035a95723db3f2900e4a7a170132eda01eb2c611f464362ebb0f7a0"
   },
-  "failure_behavior": {
-    "http_exception": "ManagementError",
-    "request_id_preserved": true,
-    "received_http_status_preserved": true,
-    "mutating_outcome_unknown": true,
+  "authentication": {
+    "optional_bearer_token": true,
+    "header_injection_rejected": true,
     "automatic_retry": false
   },
-  "runtime_smoke": {
-    "software_only": true,
-    "existing_apps_http_service": true,
-    "instances": 2,
-    "parameter_write_readback": true,
-    "parameter_write_does_not_trigger": true,
-    "event_admission_and_handler_completion": true,
-    "transport": "softbus",
-    "stale_parameter_activation": "RD529",
-    "stale_event_activation": "RD529",
-    "cleanup_complete": true
-  },
-  "limitations": [
-    "No performance or field-device claim",
-    "Unrelated full-fixture S0 timeout is retained"
-  ]
+  "hardware_commands_executed": false,
+  "prior_integration_verification": {
+    "sdk_version": "0.2.1",
+    "verification_date": "2026-10-14",
+    "python": "3.12",
+    "source_base_commit": "d0485ae523767de65bf3c5256d0d9da87858dc92",
+    "architecture": "Management-SDK -> Apps HTTP -> Softbus -> Runtime -> container executor",
+    "tests": {
+      "sdk_protocol": 18,
+      "apps_backend": 65,
+      "runtime_targeted": 4,
+      "management_e2e": "passed",
+      "parallel_namespace_http": "timeout; serial rerun passed",
+      "full_fixture_s0": "timeout"
+    },
+    "independent_distribution": {
+      "source_directory_outside_repository": true,
+      "wheel_separate_clean_venv": true,
+      "runtime_dependencies": [],
+      "platform_imports": false,
+      "native_sdk_loaded": false,
+      "user_installation": "0.2.1"
+    },
+    "failure_behavior": {
+      "http_exception": "ManagementError",
+      "request_id_preserved": true,
+      "received_http_status_preserved": true,
+      "mutating_outcome_unknown": true,
+      "automatic_retry": false
+    },
+    "runtime_smoke": {
+      "software_only": true,
+      "existing_apps_http_service": true,
+      "instances": 2,
+      "parameter_write_readback": true,
+      "parameter_write_does_not_trigger": true,
+      "event_admission_and_handler_completion": true,
+      "transport": "softbus",
+      "stale_parameter_activation": "RD529",
+      "stale_event_activation": "RD529",
+      "cleanup_complete": true
+    },
+    "limitations": [
+      "No performance or field-device claim",
+      "Unrelated full-fixture S0 timeout is retained"
+    ]
+  }
 }

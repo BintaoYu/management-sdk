@@ -54,6 +54,14 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(self.client.get_block_type("sdk::Source")["name"],"sdk::Source")
         self.assertEqual(self.calls[-1][0],"types/sdk%3A%3ASource")
         self.assertFalse(any(path=="session" for path,body,headers in self.calls))
+    def test_api_token_is_sent_on_bootstrap_reads_and_mutations(self):
+        self.client = ManagementClient(self.client.base_url, token="ia_test-token", timeout=1)
+        self.reply=lambda p,b:(200,{"completed":True})
+        self.client.write_parameter("app.Source.IN", 42)
+        self.assertEqual(len(self.calls), 2)
+        self.assertTrue(all(headers["Authorization"] == "Bearer ia_test-token" for _, _, headers in self.calls))
+        with self.assertRaises(ValueError):
+            ManagementClient(self.client.base_url, token="bad\r\ntoken")
     def test_simple_queries_and_scalar_parameter_read(self):
         self.reply=lambda p,b:(200,17 if p=="parameters/read" else {"state":"active"} if p=="status" else [{"name":"app.Source"}])
         self.assertIsInstance(self.client.list_instances(),list)

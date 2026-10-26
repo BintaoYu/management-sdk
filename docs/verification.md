@@ -2,6 +2,11 @@
 
 ## 当前分发验证
 
+2026-10-25：0.3.0 新增静态 Runtime 选择、设备目录读取和 FB START/STOP/KILL/RESET 方法。
+22 项 loopback 协议测试通过；wheel 在独立 `/tmp/management-sdk-0.3-verify` venv 安装后同一 22 项通过。
+wheel SHA-256 为 `c338146d81fc550cda63eed5a095c02b4bb3deb81569ad37cb165ff258c0517e`。
+此记录只证明客户端协议与独立分发；双 Runtime 执行验证归 Apps 既有 e2e fixture 记录。
+
 2026-10-20：0.2.2 wheel构建完成，在独立干净venv中安装并通过19项协议测试，导入路径来自该venv。
 测试使用loopback模拟服务，未发送真实设备或应用修改命令。源码摘要和wheel摘要见[机读记录](verification.json)。
 

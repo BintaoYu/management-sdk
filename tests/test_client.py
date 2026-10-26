@@ -54,6 +54,16 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(self.client.get_block_type("sdk::Source")["name"],"sdk::Source")
         self.assertEqual(self.calls[-1][0],"types/sdk%3A%3ASource")
         self.assertFalse(any(path=="session" for path,body,headers in self.calls))
+    def test_runtime_selector_is_bound_on_discovery_bootstrap_and_commands(self):
+        client = ManagementClient(self.client.base_url, runtime_id="device-b")
+        self.reply=lambda p,b:(200,[] if p=="runtimes" else {"completed":True})
+        self.assertEqual(client.list_runtimes(), [])
+        client.write_parameter("app.Source.IN", 42)
+        self.assertEqual([row[0] for row in self.calls], ["runtimes", "session", "parameters/write"])
+        self.assertTrue(all(row[2]["X-Runtime-Id"] == "device-b" for row in self.calls))
+        for invalid in ("bad\r\nheader", "../device", "", 4):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                ManagementClient(self.client.base_url, runtime_id=invalid)
     def test_api_token_is_sent_on_bootstrap_reads_and_mutations(self):
         self.client = ManagementClient(self.client.base_url, token="ia_test-token", timeout=1)
         self.reply=lambda p,b:(200,{"completed":True})
@@ -86,6 +96,19 @@ class ProtocolTests(unittest.TestCase):
         self.assertTrue(self.client.trigger_event("app.Source.REQ")["accepted"])
         self.assertEqual(self.calls[-1][1],{"reference":"app.Source.REQ"})
         with self.assertRaises(TypeError):self.client.trigger_event("app.Source.REQ",payload=b"x")
+    def test_function_block_lifecycle_uses_typed_instance_routes(self):
+        self.reply=lambda p,b:(200,{"completed":True,"function_blocks":[{"Name":"app.FB","State":"STOPPED"}]})
+        for action in ("start", "stop", "kill", "reset"):
+            self.assertTrue(getattr(self.client, action + "_function_block")("app.FB")["completed"])
+            self.assertEqual(self.calls[-1][0], "function-blocks/" + action)
+            self.assertEqual(self.calls[-1][1], {"reference":"app.FB"})
+
+    def test_unfinished_function_block_operation_has_unknown_outcome(self):
+        self.reply=lambda p,b:(409,{"code":"RD_OPERATION_INCOMPLETE","message":"operation accepted but incomplete"})
+        error = self.error(lambda: self.client.stop_function_block("app.FB"), "RD_OPERATION_INCOMPLETE")
+        self.assertTrue(error.outcome_unknown)
+        self.assertEqual(len(self.calls), 2)
+
     def test_no_current_application_and_type_query_still_available(self):
         self.context=None
         self.reply=lambda p,b:(200,[]) if p=="types" else (409,{"code":"MG_NO_CURRENT","message":"No running application"})

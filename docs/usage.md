@@ -10,6 +10,9 @@
 沿用 Apps 的 Host / Origin / CSRF 校验。默认 HTTP 为明文，远程使用管理员提供的受保护入口。
 客户端不使用环境 HTTP 代理，不跟随重定向；同一实例按顺序调用。
 
+`list_runtimes()` 返回 Apps 静态设备目录；`ManagementClient(..., runtime_id="right")` 将所有请求及会话绑定到该目标。
+不提供目标时沿用工程默认 Runtime；默认端点存在歧义时明确拒绝。SDK 不将操作广播到所有设备。
+
 ## 类型库与已部署实例
 
 ```python
@@ -25,9 +28,25 @@ print(client.list_instances())
 和内部参数定义。类型库在无运行应用时仍可查询。
 
 `list_instances()` 只查询当前 Runtime 中编译、部署的实例，返回 name、type、container、state、
-event_ports 与 data_ports。实际引用以 name/端口查询结果为准，如 `app.Source.IN`。
+host_state、event_ports 与 data_ports。`state` 是 FB 的 `IDLE/RUNNING/STOPPED/KILLED/UNKNOWN`，`host_state` 是承载执行器状态，两者独立。
+实际引用以 name/端口查询结果为准，如 `app.Source.IN`。
 库定义描述可用参数；旧程序若未编译对应读写回调，实际参数访问会返回明确的 Runtime 错误，
 须由管理员用匹配原生 SDK 重建。
+
+## 功能块生命周期
+
+```python
+client.stop_function_block("app.Source")
+client.reset_function_block("app.Source")
+client.start_function_block("app.Source")
+# client.kill_function_block("app.Source")
+```
+
+上述命令只控制指定编译实例；复合实例包含其内部子实例。STOP 保留变量，RESET 恢复参数化初值及 ECC 初始状态。
+允许的转换为 IDLE→START→RUNNING，RUNNING→STOP→STOPPED，RUNNING→KILL→KILLED，STOPPED→START→RUNNING，
+STOPPED/KILLED→RESET→IDLE。其他转换明确报错；不把重复 STOP 当作新命令的成功。
+各方法返回 `completed`、`function_blocks` 和实际管理回执；仍受会话及激活身份约束，不自动重发。
+Python/HMI 等未实现 reset callback 的实例由 Runtime 拒绝 RESET，不能把局部重置包装成成功。
 
 ## 查询和修改连接
 

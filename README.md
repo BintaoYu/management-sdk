@@ -41,6 +41,16 @@ print(client.get_status())
 没有运行应用返回 `MG_NO_CURRENT`，有多个候选返回 `MG_MULTIPLE_CURRENT`。
 类型库查询在无运行应用时仍可使用。
 
+多个设备时，先用 `client.list_runtimes()` 查看 Apps 已配置的静态目录，再显式选择目标：
+
+```python
+client = ManagementClient("http://127.0.0.1:8080", token=os.environ["INDUSTRIAL_APPS_API_TOKEN"],
+                          runtime_id="right")
+print(client.list_instances())
+```
+
+所选 Runtime 上仍需有唯一运行应用。切换设备时创建新客户端，重新获取会话上下文；SDK 不直接连接 Runtime 数据面。
+
 ## 参数与事件
 
 以下引用应替换为 `list_instances()` 查询到的实际实例和端口：

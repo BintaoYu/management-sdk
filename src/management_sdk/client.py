@@ -2,6 +2,7 @@
 import http.client
 import json
 import math
+import re
 import socket
 import urllib.error
 import urllib.parse
@@ -36,7 +37,8 @@ class ManagementClient:
     change and explicitly decide new commands; old commands are never replayed.
     Instances are synchronous and intended for sequential calls.
     """
-    def __init__(self, base_url: str = "http://127.0.0.1:8080", *, timeout: float = 10.0, token: Optional[str] = None):
+    def __init__(self, base_url: str = "http://127.0.0.1:8080", *, timeout: float = 10.0, token: Optional[str] = None,
+                 runtime_id: Optional[str] = None):
         parsed = urllib.parse.urlsplit(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ("", "/"):
             raise ValueError("base_url must be an http(s) Apps origin without credentials or a path")
@@ -46,6 +48,9 @@ class ManagementClient:
         if token is not None and (not isinstance(token, str) or not token or len(token) > 128 or any(ord(character) < 33 or ord(character) > 126 for character in token)):
             raise ValueError("token must be one non-empty ASCII API token")
         self._token = token
+        if runtime_id is not None and (not isinstance(runtime_id, str) or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}", runtime_id) is None):
+            raise ValueError("runtime_id must be a configured Runtime identifier")
+        self.runtime_id = runtime_id
         self._csrf = None
         self._context = None
         self._last_request_id = None
@@ -63,6 +68,8 @@ class ManagementClient:
         identity = "sdk-" + uuid.uuid4().hex
         self._last_request_id = identity
         headers = {"Accept": "application/json", "X-Request-ID": identity}
+        if self.runtime_id is not None:
+            headers["X-Runtime-ID"] = self.runtime_id
         if self._token is not None:
             headers["Authorization"] = "Bearer " + self._token
         if self._context is not None:
@@ -101,7 +108,7 @@ class ManagementClient:
             details = error.get("details", {})
             raise ManagementError(error.get("message", "Apps rejected request"), code=error.get("code", "SDK_PROTOCOL"),
                                   http_status=status, request_id=identity, details=details, response=value,
-                                  outcome_unknown=mutating and (status >= 500 or error.get("code") in ("RD_UNREACHABLE", "RD_ENVELOPE", "MG_OUTCOME_UNKNOWN")))
+                                  outcome_unknown=mutating and (status >= 500 or error.get("code") in ("RD_UNREACHABLE", "RD_ENVELOPE", "RD_RESPONSE_SIZE", "RD_OPERATION_INCOMPLETE", "MG_OUTCOME_UNKNOWN")))
         if value.get("request_id") != identity:
             raise ManagementError("Apps response request ID mismatch", code="SDK_PROTOCOL", http_status=status,
                                   request_id=identity, response=value, outcome_unknown=mutating)
@@ -112,6 +119,9 @@ class ManagementClient:
 
     def list_block_types(self) -> list:
         return self._request("types", current=False)
+
+    def list_runtimes(self) -> list:
+        return self._request("runtimes", current=False)
 
     def get_block_type(self, name: str) -> dict:
         if not isinstance(name, str) or not name:
@@ -141,3 +151,15 @@ class ManagementClient:
 
     def trigger_event(self, reference: str) -> dict:
         return self._request("events/trigger", {"reference": reference})
+
+    def start_function_block(self, reference: str) -> dict:
+        return self._request("function-blocks/start", {"reference": reference})
+
+    def stop_function_block(self, reference: str) -> dict:
+        return self._request("function-blocks/stop", {"reference": reference})
+
+    def kill_function_block(self, reference: str) -> dict:
+        return self._request("function-blocks/kill", {"reference": reference})
+
+    def reset_function_block(self, reference: str) -> dict:
+        return self._request("function-blocks/reset", {"reference": reference})

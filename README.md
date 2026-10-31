@@ -7,10 +7,10 @@ Management SDK 是同步 Python 客户端，通过 Apps HTTP 查询和管理当�
 
 ## 安装
 
-独立获取后，在 SDK 根目录执行：
+本文的多 Runtime 与功能块生命周期接口需要 0.3.0。以下命令获取对应开发分支；也可使用包含该版本的检出或分发包。在 SDK 根目录执行安装：
 
 ```bash
-git clone https://github.com/BintaoYu/management-sdk.git
+git clone --branch feat/iec61499-multidevice https://github.com/BintaoYu/management-sdk.git
 cd management-sdk
 python -m venv .venv
 . .venv/bin/activate
@@ -37,7 +37,7 @@ print(client.get_status())
 
 在 Apps 的账号设置中生成管理员 API 令牌，并由调用环境提供 `INDUSTRIAL_APPS_API_TOKEN`。SDK 将令牌放在 Authorization 请求头，保留现有的会话/上下文校验；改密或撤销令牌后需重新连接。`token` 参数可省略以连接未启用账号的兼容服务或测试服务。
 
-目标是 Runtime 实际激活的唯一应用；前端正在编辑的工程不会改变目标。
+目标是所选 Runtime 实际激活的唯一应用；前端正在编辑的工程不会改变目标。
 没有运行应用返回 `MG_NO_CURRENT`，有多个候选返回 `MG_MULTIPLE_CURRENT`。
 类型库查询在无运行应用时仍可使用。
 

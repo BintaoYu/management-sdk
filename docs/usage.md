@@ -117,7 +117,7 @@ HTTP响应中途截断及其他HTTP协议异常统一转换为ManagementError，
 客户端超时不取消已接纳工作，**不自动重发连接变更、参数写入或事件**。异常的 request_id 可与
 get_status 中有界 commands / 事件接纳记录关联；记录缺失不能推断成功或失败。
 
-0.2 的 ManagementClient 仅接受 Apps 协议；0.1 的 Runtime 直连接口已移除。不要把
+当前 ManagementClient（0.3.0）仅接受 Apps 协议；0.1 的 Runtime 直连接口已移除。不要把
 base_url 指向 Runtime 的 18080 端口。
 
 ## 示例、测试与打包

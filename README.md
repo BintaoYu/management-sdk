@@ -25,17 +25,15 @@ Windows 使用 `.venv\Scripts\activate` 激活环境。也可以在已有平台�
 管理员需先启动 Apps / Runtime 并部署、激活应用。SDK 默认连接 Apps 的 `8080` 端口：
 
 ```python
-import os
 from management_sdk import ManagementClient
 
-client = ManagementClient("http://127.0.0.1:8080", timeout=10,
-                          token=os.environ["INDUSTRIAL_APPS_API_TOKEN"])
+client = ManagementClient("http://127.0.0.1:8080", timeout=10)
 print(client.list_instances())
 print(client.get_connections())
 print(client.get_status())
 ```
 
-在 Apps 的账号设置中生成管理员 API 令牌，并由调用环境提供 `INDUSTRIAL_APPS_API_TOKEN`。SDK 将令牌放在 Authorization 请求头，保留现有的会话/上下文校验；改密或撤销令牌后需重新连接。`token` 参数可省略以连接未启用账号的兼容服务或测试服务。
+0.4.0起不再提供API凭据参数。本机回环调用无需认证材料，按Apps服务所属管理员访问；SDK只保留Runtime/激活上下文校验和请求关联，未知修改不重发。远端浏览器仍按自己的登录会话访问。
 
 目标是所选 Runtime 实际激活的唯一应用；前端正在编辑的工程不会改变目标。
 没有运行应用返回 `MG_NO_CURRENT`，有多个候选返回 `MG_MULTIPLE_CURRENT`。
@@ -44,8 +42,7 @@ print(client.get_status())
 多个设备时，先用 `client.list_runtimes()` 查看 Apps 已配置的静态目录，再显式选择目标：
 
 ```python
-client = ManagementClient("http://127.0.0.1:8080", token=os.environ["INDUSTRIAL_APPS_API_TOKEN"],
-                          runtime_id="right")
+client = ManagementClient("http://127.0.0.1:8080", runtime_id="right")
 print(client.list_instances())
 ```
 

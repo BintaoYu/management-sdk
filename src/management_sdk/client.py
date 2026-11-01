@@ -37,7 +37,7 @@ class ManagementClient:
     change and explicitly decide new commands; old commands are never replayed.
     Instances are synchronous and intended for sequential calls.
     """
-    def __init__(self, base_url: str = "http://127.0.0.1:8080", *, timeout: float = 10.0, token: Optional[str] = None,
+    def __init__(self, base_url: str = "http://127.0.0.1:8080", *, timeout: float = 10.0,
                  runtime_id: Optional[str] = None):
         parsed = urllib.parse.urlsplit(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ("", "/"):
@@ -45,13 +45,9 @@ class ManagementClient:
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("timeout must be a finite positive number of seconds")
         self.base_url, self.timeout = base_url.rstrip("/"), timeout
-        if token is not None and (not isinstance(token, str) or not token or len(token) > 128 or any(ord(character) < 33 or ord(character) > 126 for character in token)):
-            raise ValueError("token must be one non-empty ASCII API token")
-        self._token = token
         if runtime_id is not None and (not isinstance(runtime_id, str) or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}", runtime_id) is None):
             raise ValueError("runtime_id must be a configured Runtime identifier")
         self.runtime_id = runtime_id
-        self._csrf = None
         self._context = None
         self._last_request_id = None
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
@@ -59,24 +55,21 @@ class ManagementClient:
     def _request(self, path: str, body=None, *, current: bool = True, bootstrap: bool = False):
         mutating = body is not None and path != "parameters/read"
         data = None if body is None else json.dumps(body, ensure_ascii=False, allow_nan=False).encode()
-        if not bootstrap and current and (self._csrf is None or self._context is None):
+        if not bootstrap and current and self._context is None:
             session = self._request("session", current=False, bootstrap=True)
-            if not isinstance(session, dict) or not isinstance(session.get("csrf_token"), str) or not session["csrf_token"] or (session.get("context") is not None and not isinstance(session["context"], str)):
+            if not isinstance(session, dict) or (session.get("context") is not None and not isinstance(session["context"], str)):
                 raise ManagementError("Invalid Apps management session", code="SDK_PROTOCOL", http_status=200,
                                       request_id=self._last_request_id, response=session)
-            self._csrf, self._context = session["csrf_token"], session.get("context")
+            self._context = session.get("context")
         identity = "sdk-" + uuid.uuid4().hex
         self._last_request_id = identity
         headers = {"Accept": "application/json", "X-Request-ID": identity}
         if self.runtime_id is not None:
             headers["X-Runtime-ID"] = self.runtime_id
-        if self._token is not None:
-            headers["Authorization"] = "Bearer " + self._token
         if self._context is not None:
             headers["X-Management-Context"] = self._context
         if data is not None:
-            headers.update({"Content-Type": "application/json", "X-CSRF-Token": self._csrf,
-                            "Origin": self.base_url, "Sec-Fetch-Site": "same-origin"})
+            headers["Content-Type"] = "application/json"
         request = urllib.request.Request(self.base_url + "/api/v1/management/" + path, data=data, headers=headers)
         status = None
         try:

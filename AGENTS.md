@@ -1,7 +1,12 @@
 # Management SDK 协作规则
 
 本文件适用于独立的公开 `management-sdk` 仓库；在完整平台中同时遵循平台根规则。
+用户当前任务和后续明确要求优先于项目约定；独立使用不以获取平台父仓库为前置。
 按任务查阅 [README](README.md)、[使用说明](docs/usage.md)、[验证记录](docs/verification.md)和 `src/management_sdk/`。
+
+默认不使用子 agent，由主 agent 完成开发、配置、文档、测试、修复和验收；仅在用户明确要求使用子 agent 或并行 agent 时分派。
+
+平台不提供 API/Bearer 令牌认证，实验和管理客户端不得要求 API 令牌，也不以自动申请或隐藏凭据替代。仅用户后续明确变更才重新设计此功能；协议内部身份、代次、租约与消息关联不属于认证凭据。
 
 ## 接口与独立使用
 
@@ -14,11 +19,11 @@
 ## 验证与文档
 
 - 协议单测使用 loopback 模拟服务器，不修改真实应用；明确授权的集成验证按对应目标和操作范围另行执行与记录。
-- 代码改动在隔离虚拟环境中安装包，运行受影响测试；完整回归入口为 `python -m unittest discover -s tests -v`。分发/依赖变更或版本发布时验证 wheel 安装和导入。
+- 代码改动在隔离虚拟环境中安装包，运行受影响测试；完整回归在 `management-sdk/` 仓库根目录执行 `python -m unittest discover -s tests -v`。分发/依赖变更或版本发布时验证 wheel 安装和导入。
 - 仅文档或 AGENTS 改动检查链接和差异，不因此重新安装包、构建 wheel 或调用实际服务。
 - 用法与错误语义更新 README/usage，验证事实更新 verification；不把待实现接口写成已支持，不为规则整理新建并行计划。
 
 ## 命名与提交
 
 文档采用 kebab-case，Python 文件、包、函数和变量使用 snake_case，类 PascalCase，常量 UPPER_SNAKE_CASE；保留标准文件名和既有符号。
-检查工作区并保护已有修改；提交/推送遵循用户已有授权和约定分支，精确暂存本轮文件，使用 Conventional Commits。
+检查工作区并保护已有修改；提交/推送遵循用户已有授权和约定分支，精确暂存本轮文件，使用 Conventional Commits；提交授权不自动包含推送。

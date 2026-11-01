@@ -6,8 +6,7 @@
 ## 连接与调用边界
 
 `ManagementClient()` 默认连接 Apps `http://127.0.0.1:8080`，等待预算为 10 秒；
-可显式设置 `ManagementClient(base_url, timeout=5, token=api_token)`；启用账号的服务由调用环境提供管理员API令牌。SDK 内部获取 CSRF token 与不透明运行上下文，
-沿用 Apps 的 Host / Origin / CSRF 校验。默认 HTTP 为明文，远程使用管理员提供的受保护入口。
+可显式设置 `ManagementClient(base_url, timeout=5)`；本机非浏览器调用无需凭据，按Apps服务所属管理员处理。SDK内部仅获取运行上下文，不请求或传递认证材料。
 客户端不使用环境 HTTP 代理，不跟随重定向；同一实例按顺序调用。
 
 `list_runtimes()` 返回 Apps 静态设备目录；`ManagementClient(..., runtime_id="right")` 将所有请求及会话绑定到该目标。

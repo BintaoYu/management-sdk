@@ -110,13 +110,13 @@ MG_NO_CURRENT、MG_MULTIPLE_CURRENT、MG_NOT_READY、MG_IDENTITY_UNCONFIRMED 说
 HTTP响应中途截断及其他HTTP协议异常统一转换为ManagementError，保留本次request_id及已收到的HTTP状态。
 修改请求无法确认结果时outcome_unknown=true；响应读取失败不触发自动重发。
 
-运行应用、激活或 Runtime/Apps 会话变化时，返回 MG_SESSION_CHANGED、RD017 或 csrf_rejected。
+运行应用、激活或 Runtime/Apps 会话变化时，返回 MG_SESSION_CHANGED 或 RD017；浏览器会话另受 CSRF 校验。
 旧客户端不会自动刷新后重放命令；请新建 ManagementClient、重新查询实例，再明确决定新操作。
 若当前应用校验后、实际执行前发生重新激活，Runtime以RD529拒绝本次旧身份请求，参数和事件不会转交给新activation。
 客户端超时不取消已接纳工作，**不自动重发连接变更、参数写入或事件**。异常的 request_id 可与
 get_status 中有界 commands / 事件接纳记录关联；记录缺失不能推断成功或失败。
 
-当前 ManagementClient（0.3.0）仅接受 Apps 协议；0.1 的 Runtime 直连接口已移除。不要把
+当前 ManagementClient（0.4.0）仅接受 Apps 协议；0.1 的 Runtime 直连接口已移除。不要把
 base_url 指向 Runtime 的 18080 端口。
 
 ## 示例、测试与打包
@@ -134,4 +134,4 @@ python -m build .
 ```
 
 离线测试只启动 loopback 模拟 Apps，不访问实际服务。wheel 包含可导入的 management_sdk；
-源码包同时携带 README、示例和测试。独立安装与纯软件实机验证见[验证说明](verification.md)。
+源码包同时携带 README、示例和测试。当前独立安装与 loopback 协议验证范围见[验证说明](verification.md)。

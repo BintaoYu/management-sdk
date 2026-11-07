@@ -7,10 +7,10 @@ Management SDK 是同步 Python 客户端，通过 Apps HTTP 查询和管理当�
 
 ## 安装
 
-本文的多 Runtime 与功能块生命周期接口需要 0.3.0。以下命令获取对应开发分支；也可使用包含该版本的检出或分发包。在 SDK 根目录执行安装：
+本文对应 0.4.0，包含多 Runtime 与功能块生命周期接口，不接受 API 凭据参数。可独立获取源码，也可使用配套检出或分发包。在 SDK 根目录执行安装：
 
 ```bash
-git clone --branch feat/iec61499-multidevice https://github.com/BintaoYu/management-sdk.git
+git clone https://github.com/BintaoYu/management-sdk.git
 cd management-sdk
 python -m venv .venv
 . .venv/bin/activate

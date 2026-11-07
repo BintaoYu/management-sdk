@@ -14,3 +14,17 @@ __pycache__/
 /.pytest_cache/
 /node_modules/
 __pycache__/
+
+# Experimental measurements and archives stay local, including in private repositories.
+results/
+raw/
+measurements/
+experiment-data/
+*.jsonl
+*.parquet
+*.npy
+*.npz
+*.tar.zst
+logs/
+*.log
+benchmark-results-assets/

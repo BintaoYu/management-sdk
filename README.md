@@ -33,7 +33,7 @@ print(client.get_connections())
 print(client.get_status())
 ```
 
-0.4.0起不再提供API凭据参数。本机回环调用无需认证材料，按Apps服务所属管理员访问；SDK只保留Runtime/激活上下文校验和请求关联，未知修改不重发。远端浏览器仍按自己的登录会话访问。
+本机回环调用按 Apps 服务所属管理员访问；客户端保留 Runtime/激活上下文校验和请求关联，未知修改不重发。远端浏览器按自己的登录会话访问。
 
 目标是所选 Runtime 实际激活的唯一应用；前端正在编辑的工程不会改变目标。
 没有运行应用返回 `MG_NO_CURRENT`，有多个候选返回 `MG_MULTIPLE_CURRENT`。
@@ -91,4 +91,4 @@ python -m unittest discover -s tests -v
 ```
 
 测试使用 loopback 模拟 Apps。打包与实机验证记录见[验证说明](docs/verification.md)，
-公共调用与错误语义见[使用说明](docs/usage.md)。
+公共调用与错误语义见[使用说明](docs/usage.md)，开发与交付约束见[协作规则](AGENTS.md)。

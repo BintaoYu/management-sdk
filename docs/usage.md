@@ -86,6 +86,43 @@ print(created["completed"], created["applied"])
 和传输信息保存在 diagnostics。连接配置不是执行证明；`get_status().topology` 缺失/null 表示
 执行拓扑尚未确认，不能用旧拓扑冒充正在运行的连接。恢复拓扑用新的操作，修订正常递增。
 
+## 固定实例的批量拓扑更新
+
+批量接口保持实例、算法、端口和部署位置，允许同批替换 Data 驱动以及修改 Event 连接。先读取当前版本并规划，审阅候选图与影响范围后，显式提交相同的变更、版本、摘要和激活身份：
+
+```python
+client = ManagementClient("http://127.0.0.1:8080", timeout=70)
+changes = [
+    {"operation": "DELETE", "type": "Data", "source": "app.Source.A", "destination": "app.Sink.X"},
+    {"operation": "CREATE", "type": "Data", "source": "app.Source.B", "destination": "app.Sink.X"},
+]
+revision = client.get_status()["connection_revision"]
+plan = client.plan_topology_update(changes, expected_revision=revision)
+print(plan.get("plans") if plan.get("distributed") else plan["network_binding"])
+# 在调用方完成候选审阅后执行：
+result = client.apply_topology_update(changes, expected_revision=revision,
+    plan_sha256=plan["plan_sha256"], activation_id=plan["activation_id"], timeout_ms=10000)
+print(result["completed"], result.get("participants", result.get("operation")))
+print(client.get_status()["topology_update"])
+```
+
+`plan_topology_update` 只读，失败不标成未知写入。提交不会自动重新规划、刷新 revision 或重试。
+`get_status` 同时返回当前连接 revision 和 Runtime 的 `topology_update` 事务记录；跨版本读回冲突会明确报错。
+应用被隔离时仍可查询事务并显式调用 `recover_topology_update(transaction_id, action="abort"|"finish")`。
+提交前可请求恢复旧图，提交决定后只能 finish；Runtime 核验当前事务、参与者和决策，SDK 不自行回滚。
+单端 `completed` 仅在 Operation 成功时为 true；跨端仅在所有参与者发布并放行后为 true。partial、失败、结果未知和业务执行完成各自判断。
+超时不会取消或重发工作；先读取原事务状态。`timeout_ms` 为 Runtime 的 1..60000 ms 等待预算，客户端 HTTP `timeout` 应留出额外处理时间。
+
+单 Runtime 支持 SHM/TCP/UDP、既有背压 profile、受支持的 Basic-FB C++/Python 托管边界；SDK 0.22 的 Runtime 可核验托管载荷引用排空，支持内联与缓冲区 Event。
+已部署的 SYS 可经同一接口协调其全部 Runtime：`plan.distributed=true` 时，`plans` 和 `participants` 封存每端会话、版本和物理 owner，返回的共同摘要须原样提交。
+`expected_revision` 约束所选 Runtime；共同摘要同时约束其他参与端，SDK 不为旧计划选择新的版本。
+跨端成功结果包含 `transaction_id`、`decision=commit`、`state=succeeded` 和各端 `participants`，不返回伪造的单个 Runtime Operation。
+失败后用该共同事务 ID 显式恢复；未知修改保留 `outcome_unknown`，不自动重发。
+
+跨端当前为同 ABI、非分类 TCP/UDP 的 `event-bytes-with/2`，保留 `inline-event-with/1` 兼容；大载荷传实际字节，接收端重建本机缓冲区/FrameRef，不传共享内存引用。远端 WITH Data 的发布者须与 Event 来源同容器；本地 Data 来源可独立。
+其他设备上的独立 Data、注册 I/O、未托管引用、不同 ABI 和物理设备资格分别验证，不支持的组合明确拒绝。管理客户端版本保持 0.5；载荷能力取决于目标 Runtime 与匹配的原生 SDK。
+Runtime 选择只绑定客户端上下文，参与范围仍由该 SYS 的完整设备目录确定；连接/提交完成不等于物理设备动作完成。
+
 ## 参数读写与事件触发
 
 ```python
@@ -131,7 +168,7 @@ HTTP响应中途截断及其他HTTP协议异常统一转换为ManagementError，
 客户端超时不取消已接纳工作，**不自动重发连接变更、参数写入或事件**。异常的 request_id 可与
 get_status 中有界 commands / 事件接纳记录关联；记录缺失不能推断成功或失败。
 
-当前 ManagementClient（0.4.0）仅接受 Apps 协议；0.1 的 Runtime 直连接口已移除。不要把
+当前 ManagementClient（0.5.0）仅接受 Apps 协议；0.1 的 Runtime 直连接口已移除。不要把
 base_url 指向 Runtime 的 18080 端口。
 
 ## 示例、测试与打包

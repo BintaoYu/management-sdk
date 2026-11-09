@@ -10,6 +10,42 @@ from management_sdk import ManagementClient, ManagementError
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_topology_plan_apply_recovery_preserve_reviewed_identity(self):
+        changes = [{'operation': 'DELETE', 'type': 'Event', 'source': 'A.OUT', 'destination': 'B.IN'}]
+        plan = {'expected_revision': 7, 'plan_sha256': 'd' * 64, 'activation_id': 'active-one'}
+        self.reply = lambda p, b: (200, plan if p == 'topology/plan' else {'completed': True})
+        self.assertEqual(self.client.plan_topology_update(changes, expected_revision=7), plan)
+        self.client.apply_topology_update(changes, **plan, timeout_ms=12000)
+        self.assertEqual(self.calls[-1][1], {'changes': changes, **plan, 'timeout_ms': 12000})
+        self.client.recover_topology_update('transaction-one', action='finish')
+        self.assertEqual(self.calls[-1][1], {'transaction_id': 'transaction-one', 'action': 'finish', 'timeout_ms': 5000})
+        self.assertEqual([p for p, _, _ in self.calls], ['session', 'topology/plan', 'topology/apply', 'topology/recover'])
+        self.assertTrue(all(h['X-Management-Context'] == self.context for p, b, h in self.calls[1:]))
+
+    def test_topology_timeout_separates_validation_from_unknown_writes(self):
+        self.client.list_instances()
+        self.client.timeout = .02
+        def reply(p, b):
+            time.sleep(.08)
+            return 200, {}
+        self.reply = reply
+        changes = [{'operation': 'DELETE', 'type': 'Data', 'source': 'A.X', 'destination': 'B.X'}]
+        self.assertFalse(self.error(lambda: self.client.plan_topology_update(changes, expected_revision=1), 'SDK_TIMEOUT').outcome_unknown)
+        self.assertTrue(self.error(lambda: self.client.apply_topology_update(changes, expected_revision=1,
+            plan_sha256='a' * 64, activation_id='active'), 'SDK_TIMEOUT').outcome_unknown)
+        self.assertTrue(self.error(lambda: self.client.recover_topology_update('pending', action='finish'), 'SDK_TIMEOUT').outcome_unknown)
+        self.assertEqual(len(self.calls), 5)
+
+    def test_topology_stale_or_irreversible_result_is_not_retried(self):
+        self.reply = lambda p, b: (409, {'code': 'RD438', 'details': {'decision': 'commit', 'operation': {'state': 'failed'}}})
+        error = self.error(lambda: self.client.recover_topology_update('pending', action='abort'), 'RD438')
+        self.assertFalse(error.outcome_unknown)
+        self.assertEqual(error.details['decision'], 'commit')
+        self.assertEqual(len(self.calls), 2)
+        with self.assertRaises(ValueError):
+            self.client.recover_topology_update('pending', action='force')
+        self.assertEqual(len(self.calls), 2)
+
     def setUp(self):
         self.calls = []
         self.context = "current-one"

@@ -53,7 +53,7 @@ class ManagementClient:
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
     def _request(self, path: str, body=None, *, current: bool = True, bootstrap: bool = False):
-        mutating = body is not None and path != "parameters/read"
+        mutating = body is not None and path not in ("parameters/read", "topology/plan")
         data = None if body is None else json.dumps(body, ensure_ascii=False, allow_nan=False).encode()
         if not bootstrap and current and self._context is None:
             session = self._request("session", current=False, bootstrap=True)
@@ -135,6 +135,22 @@ class ManagementClient:
 
     def delete_connection(self, source: str, destination: str) -> dict:
         return self._request("connections/delete", {"source": source, "destination": destination})
+
+    def plan_topology_update(self, changes: list, *, expected_revision: int) -> dict:
+        """Read-only candidate validation; review before explicitly applying."""
+        return self._request("topology/plan", {"changes": changes, "expected_revision": expected_revision})
+
+    def apply_topology_update(self, changes: list, *, expected_revision: int,
+                              plan_sha256: str, activation_id: str, timeout_ms: int = 5000) -> dict:
+        """Apply exactly the reviewed candidate, without refresh or retry."""
+        return self._request("topology/apply", {"changes": changes, "expected_revision": expected_revision,
+            "plan_sha256": plan_sha256, "activation_id": activation_id, "timeout_ms": timeout_ms})
+
+    def recover_topology_update(self, transaction_id: str, *, action: str, timeout_ms: int = 5000) -> dict:
+        """Request abort/finish of the transaction observed in get_status()."""
+        if action not in ("abort", "finish"):
+            raise ValueError("action must be abort or finish")
+        return self._request("topology/recover", {"transaction_id": transaction_id, "action": action, "timeout_ms": timeout_ms})
 
     def read_parameter(self, reference: str) -> Any:
         return self._request("parameters/read", {"reference": reference})

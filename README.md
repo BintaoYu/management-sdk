@@ -7,7 +7,7 @@ Management SDK 是同步 Python 客户端，通过 Apps HTTP 查询和管理当�
 
 ## 安装
 
-本文对应 0.4.0，包含多 Runtime 与功能块生命周期接口，不接受 API 凭据参数。以下先获取源码，再进入 SDK 根目录安装；已有配套检出或分发包时可直接安装。
+本文对应当前源码 0.5.0，分发状态见[验证记录](docs/verification.md)。安装前核对所选检出或 wheel 的版本；该版本包含多 Runtime 选择、功能块生命周期和固定实例 Event/Data 批量拓扑接口，不接受 API 凭据参数。以下先获取源码，再进入 SDK 根目录安装；已有配套检出或分发包时可直接安装。
 
 ```bash
 git clone https://github.com/BintaoYu/management-sdk.git
@@ -60,7 +60,7 @@ print(receipt["accepted"], receipt["request_id"])
 ```
 
 参数赋值不会触发事件。事件回执表示接纳，handler 完成及下游效果需要另行读回。
-连接增删、类型查询、参数类型和执行确认方式见[完整使用说明](docs/usage.md)。
+连接增删、批量拓扑规划/提交/恢复、类型查询、参数类型和执行确认方式见[完整使用说明](docs/usage.md)。
 
 ## 处理错误
 

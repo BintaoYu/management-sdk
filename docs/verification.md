@@ -13,8 +13,8 @@
 
 ## 验证边界
 
-协议测试使用 loopback 模拟服务，证明客户端协议与独立分发。另一次集成使用私有 mount/IPC/network namespace、模拟 OCI/cgroup 和真实生成节点/Python Worker，经公共 Apps HTTP 调用；客户端包不导入 Apps/Runtime 私有模块。集成所用 Python 文件与最终 wheel 的文件摘要一致。
+协议测试通过 loopback 模拟服务检查客户端协议与独立分发。另一次集成使用私有 mount/IPC/network namespace、模拟 OCI/cgroup 和真实生成节点/Python Worker，经公共 Apps HTTP 调用；客户端包不导入 Apps/Runtime 私有模块。集成所用 Python 文件与最终 wheel 的文件摘要一致。
 
 集成覆盖单端成功提交和状态读回，以及同 ABI Event/WITH 的双 Runtime 协调与故障恢复；SDK 0.22 / Release 的 4KiB Python Worker 工程也经安装后的独立客户端验证五批事务、字节读回和清理。使用隔离 namespace、真实 socket 与模拟 OCI/cgroup；不是日常已安装服务的跨端业务、物理多设备、第三设备独立 Data、现场设备动作或性能验收。未知结果不自动重发；公共接口用法见[使用说明](usage.md)。
 
-使用时仍须核对实际导入版本。
+使用前核对实际导入版本，确认与上述验证记录对应。

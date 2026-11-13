@@ -1,6 +1,6 @@
 # Management SDK 使用说明
 
-先按[README](../README.md)安装并连接 Apps。本文补充类型、连接、参数、事件、错误和打包约定。
+先按[README](../README.md)安装并连接 Apps，再按下述接口查询类型、修改连接、读写参数或触发事件。错误处理与打包约定见后文。
 代码中的引用必须替换为实例查询返回的实际名称。Shell 命令均在 SDK 仓库根目录执行。
 
 ## 连接与调用边界
@@ -132,11 +132,11 @@ receipt = client.trigger_event("app.Source.REQ")
 print(receipt["accepted"], receipt["request_id"])
 ```
 
-**参数赋值不会触发事件。** 读写直接使用 JSON 布尔、整数、有限实数及固定长度数组，不做
+参数赋值不会触发事件。读写直接使用 JSON 布尔、整数、有限实数及固定长度数组，不做
 字符串/数字或布尔/整数转换。WRITE 必须实际 Operation 成功才返回 completed=true；
 HTTP 200 中嵌套的 failed/partial/running 不会被包装成成功。
 
-`trigger_event(reference)` 只触发已声明输入事件，返回**接纳结果**；accepted=true 不代表执行
+`trigger_event(reference)` 只触发已声明输入事件，返回接纳结果；accepted=true 不代表执行
 完成。普通接口不暴露 Base64 或原始 ABI 载荷。需要确认 handler 完成时，查询 get_status 的
 agents，通过 diagnostics 中的 admission.sequence 对应同一 activation/Agent 的 event_executions。
 单个输入 handler 的执行结果不证明整个下游链完成；有界历史缺失时结果仍未知。
@@ -165,7 +165,7 @@ HTTP响应中途截断及其他HTTP协议异常统一转换为ManagementError，
 运行应用、激活或 Runtime/Apps 会话变化时，返回 MG_SESSION_CHANGED 或 RD017；浏览器会话另受 CSRF 校验。
 旧客户端不会自动刷新后重放命令；请新建 ManagementClient、重新查询实例，再明确决定新操作。
 若当前应用校验后、实际执行前发生重新激活，Runtime以RD529拒绝本次旧身份请求，参数和事件不会转交给新activation。
-客户端超时不取消已接纳工作，**不自动重发连接变更、参数写入或事件**。异常的 request_id 可与
+客户端超时不取消已接纳工作，也不自动重发连接变更、参数写入或事件。异常的 request_id 可与
 get_status 中有界 commands / 事件接纳记录关联；记录缺失不能推断成功或失败。
 
 当前 ManagementClient（0.5.0）仅接受 Apps 协议；0.1 的 Runtime 直连接口已移除。不要把
